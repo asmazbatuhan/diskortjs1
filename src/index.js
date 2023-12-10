@@ -14,6 +14,8 @@ const client = new Client({
 
 client.on('ready', (c) => {
     console.log(`${c.user.tag} goreve hazir`);
+
+    handleUserEventsFile();
 });
 
 
@@ -66,7 +68,6 @@ client.on('interactionCreate', (interaction) => {
 if (interaction.commandName === 'bilgi') {
 interaction.guild.members.fetch({ withPresences: true }).then(fetchedMembers => {
 	const totalOnline = fetchedMembers.filter(member => member.presence?.status === 'online');
-	// Now you have a collection with all online member objects in the totalOnline variable
 	interaction.reply(`baba toplam ${totalOnline.size} kisi acik`);
 });
 }
@@ -75,8 +76,8 @@ if (interaction.commandName === 'deneme1') {
         interaction.channel.send("@everyone ");
 }
 });
-
-client.on('presenceUpdate', (oldPresence, newPresence) => {
+/*
+client.on('presenceUpdate', (oldPresence, newPresence) => { 
     if (newPresence.activities.length > 0) {
       const game = newPresence.activities[0].name;
       
@@ -88,5 +89,68 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
       }
     }
 });
+*/
+const fs = require('fs');
+const path = require('path');
+
+handleUserEventsFile();
+
+
+client.on('presenceUpdate', (oldPresence, newPresence) => {
+
+  const oldGame = oldPresence?.activities.find(activity => activity.type === 'PLAYING');
+  const newGame = newPresence?.activities.find(activity => activity.type === 'PLAYING');
+  console.log(newPresence);
+    
+  
+  const userId = newPresence.user.id;
+  const gameName = newPresence.activities[0] ? newPresence.activities[0] : null;
+  const eventTimestamp = new Date().toISOString();
+
+
+  insertGameEvent(userId, gameName, eventTimestamp);
+});
+
+function handleUserEventsFile() {
+    const fileName = 'user_events.txt';
+    const archiveFolder = 'archive';
+    const eventsArchivePrefix = 'events_archive';
+  
+    const currentTimestamp = Date.now();
+    const archivedFileName = `${eventsArchivePrefix}_${currentTimestamp}_${fileName}`;
+  
+    const filePath = path.join(__dirname, fileName);
+    const archivePath = path.join(__dirname, archiveFolder, archivedFileName);
+  
+
+  if (fs.existsSync(filePath)) {
+
+    if (!fs.existsSync(path.join(__dirname, archiveFolder))) {
+      fs.mkdirSync(path.join(__dirname, archiveFolder));
+    }
+
+  
+    fs.renameSync(filePath, archivePath);
+    console.log(`Moved existing ${fileName} to ${archivePath}`);
+  } else {
+  
+    fs.writeFileSync(filePath, '');
+    console.log(`Created ${fileName}`);
+  }
+}
+
+function insertGameEvent(userId, gameName, eventTimestamp) {
+  const fileName = 'user_events.txt';
+  const filePath = path.join(__dirname, fileName);
+
+ 
+  const csvString = `${userId},${gameName || 'null'},${eventTimestamp}\n`;
+
+  
+  fs.appendFileSync(filePath, csvString);
+  console.log(`Inserted game event for user ${userId} (${gameName}) at ${eventTimestamp}`);
+}
+
+
 
 client.login(process.env.TOKEN);
