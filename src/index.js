@@ -76,7 +76,7 @@ if (interaction.commandName === 'deneme1') {
         interaction.channel.send("@everyone ");
 }
 });
-/*
+/* dinlenmede şuan bu >>
 client.on('presenceUpdate', (oldPresence, newPresence) => { 
     if (newPresence.activities.length > 0) {
       const game = newPresence.activities[0].name;
